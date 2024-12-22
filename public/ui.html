@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #1c1e21;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .app-header h1 {
+            color: #1877f2;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #65676b;
+            font-size: 14px;
+        }
+
+        /* Login Section */
+        #username-section {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #username-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #166fe5;
+        }
+
+        /* Groups Section */
+        #groups-section {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .groups-list {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .groups-list h3 {
+            margin-bottom: 15px;
+            color: #1c1e21;
+            font-size: 1.2em;
+        }
+
+        .group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        /* Chat Section */
+        #chat-section {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .back-button {
+            padding: 8px 16px;
+            margin-right: 15px;
+        }
+
+        #messages-container {
+            height: calc(100% - 130px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            clear: both;
+        }
+
+        .message.sent {
+            float: right;
+        }
+
+        .message.received {
+            float: left;
+        }
+
+        .message .content {
+            padding: 12px;
+            border-radius: 18px;
+            background: #e9ecef;
+            word-wrap: break-word;
+        }
+
+        .message.sent .content {
+            background: #1877f2;
+            color: white;
+        }
+
+        .username {
+            font-size: 12px;
+            color: #65676b;
+            margin-bottom: 4px;
+        }
+
+        .message-form {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #bcc0c4;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #929292;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            #groups-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <h1>Chat Application</h1>
+            <div id="loading">Loading...</div>
+        </div>
+
+        <!-- Username Section -->
+        <div id="username-section">
+            <form id="username-form">
+                <input type="text" id="username" placeholder="Enter or Create Username">
+                <button type="submit">Join</button>
+            </form>
+            <div id="username-status"></div>
+        </div>
+
+        <!-- Groups Section -->
+        <div id="groups-section">
+            <div id="create-group-form">
+                <h3>Create New Group</h3>
+                <form>
+                    <input type="text" id="group-name" placeholder="Enter group name">
+                    <button type="submit">Create Group</button>
+                </form>
+            </div>
+
+            <div class="groups-list">
+                <h3>Your Groups</h3>
+                <div id="joined-groups-container"></div>
+            </div>
+
+            <div class="groups-list">
+                <h3>Available To Join Groups</h3>
+                <div id="available-groups-container"></div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div id="chat-section">
+            <div class="chat-header">
+                <button onclick="closeChat()" class="back-button">←</button>
+                <h3 id="current-group-name">Group Chat</h3>
+            </div>
+            <div id="messages-container"></div>
+            <form id="message-form" class="message-form">
+                <input type="text" 
+                       id="message-input" 
+                       placeholder="Type your message..."
+                       autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Keep your existing JavaScript -->
+    <script>
+    let currentUsername = '';
+    let currentGroupId = null;
+    let currentGroupName = null;
+
+    function setLoading(isLoading) {
+        document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
+    }
+
+    // Username form submission
+    document.getElementById('username-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const usernameInput = document.getElementById('username').value.trim();
+        if (!usernameInput) {
+            alert('Please enter a username.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:8000/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: usernameInput })
+            });
+
+            const result = await response.json();
+            console.log('Login response:', result);
+
+            if (response.ok) {
+                currentUsername = usernameInput;
+                document.getElementById('username-status').textContent = 
+                    `${result.message || 'Welcome!'} ${currentUsername}`;
+                
+                document.getElementById('username-section').style.display = 'none';
+                document.getElementById('groups-section').style.display = 'grid';
+                document.getElementById('chat-section').style.display = 'none';
+                
+                await fetchGroups();
+            } else {
+                alert(result.error || 'Failed to process username');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Error processing username. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    // Fetch and display groups
+    async function fetchGroups() {
+        if (!currentUsername) return;
+        
+        setLoading(true);
+        try {
+            const [allGroupsResponse, userGroupsResponse] = await Promise.all([
+                fetch('http://localhost:8000/groups'),
+                fetch(`http://localhost:8000/users/${currentUsername}/groups`)
+            ]);
+
+            const allGroups = await allGroupsResponse.json();
+            const userGroups = await userGroupsResponse.json();
+
+            // Render joined groups
+            const joinedContainer = document.getElementById('joined-groups-container');
+            joinedContainer.innerHTML = '';
+            
+            userGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-item';
+                groupDiv.innerHTML = `
+                    <span>${group.group_name}</span>
+                    <button onclick="viewGroupChat(${group.group_id}, '${group.group_name}')">View Chat</button>
+                `;
+                joinedContainer.appendChild(groupDiv);
+            });
+
+            // Render available groups
+            const availableContainer = document.getElementById('available-groups-container');
+            availableContainer.innerHTML = '';
+            
+            const joinedGroupIds = new Set(userGroups.map(group => group.group_id));
+            const availableGroups = allGroups.filter(group => !joinedGroupIds.has(group.group_id));
+            
+            availableGroups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-item';
+                groupDiv.innerHTML = `
+                    <span>${group.group_name}</span>
+                    <button onclick="joinGroup(${group.group_id})">Join</button>
+                `;
+                availableContainer.appendChild(groupDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching groups:', error);
+            alert('Error fetching groups. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Add these functions at the end of your script
+    async function viewGroupChat(groupId, groupName) {
+        currentGroupId = groupId;
+        currentGroupName = groupName;
+        
+        document.getElementById('groups-section').style.display = 'none';
+        document.getElementById('chat-section').style.display = 'block';
+        document.getElementById('current-group-name').textContent = groupName;
+        
+        await loadMessages();
+    }
+
+    function closeChat() {
+        document.getElementById('chat-section').style.display = 'none';
+        document.getElementById('groups-section').style.display = 'grid';
+        currentGroupId = null;
+        currentGroupName = null;
+    }
+
+    async function joinGroup(groupId) {
+        try {
+            const response = await fetch(`http://localhost:8000/groups/${groupId}/join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: currentUsername })
+            });
+
+            if (response.ok) {
+                await fetchGroups();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to join group');
+            }
+        } catch (error) {
+            console.error('Error joining group:', error);
+            alert('Error joining group. Please try again.');
+        }
+    }
+
+    // Create group form handler
+    document.getElementById('create-group-form').querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const groupName = document.getElementById('group-name').value.trim();
+        if (!groupName) {
+            alert('Please enter a group name.');
+            return;
+        }
+        
+        try {
+            const response = await fetch('http://localhost:8000/groups', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    group_name: groupName,
+                    user_id: currentUsername
+                })
+            });
+
+            if (response.ok) {
+                document.getElementById('group-name').value = '';
+                await fetchGroups();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to create group');
+            }
+        } catch (error) {
+            console.error('Error creating group:', error);
+            alert('Error creating group. Please try again.');
+        }
+    });
+
+    // Load messages function
+    async function loadMessages() {
+        if (!currentGroupId) return;
+        
+        try {
+            const response = await fetch(`http://localhost:8000/groups/${currentGroupId}/messages`);
+            const messages = await response.json();
+            
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '';
+            
+            messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                const isCurrentUser = message.user_id === currentUsername;
+                
+                messageDiv.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+                messageDiv.innerHTML = `
+                    ${!isCurrentUser ? `<div class="username">${message.user_id}</div>` : ''}
+                    <div class="content">${message.message_content}</div>
+                `;
+                
+                container.appendChild(messageDiv);
+            });
+            
+            container.scrollTop = container.scrollHeight;
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    // Message form handler
+    document.getElementById('message-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        
+        if (!message || !currentGroupId) return;
+        
+        try {
+            const response = await fetch('http://localhost:8000/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: currentUsername,
+                    group_id: currentGroupId,
+                    message_content: message
+                })
+            });
+            
+            if (response.ok) {
+                messageInput.value = '';
+                await loadMessages();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to send message');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Error sending message. Please try again.');
+        }
+    });
+    </script>
+</body>
+</html>
