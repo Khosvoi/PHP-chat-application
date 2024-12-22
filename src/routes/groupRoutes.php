@@ -18,6 +18,15 @@ return function (App $app, DBQueries $dbQueries) {
 
         try {
             $groupId = $dbQueries->createGroupQuery($groupName);
+            if ($groupId === -1) {
+                $error = ['error' => 'Group name already exists'];
+                $response->getBody()->write(json_encode($error));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(409);
+            }
+            if ($groupId === false) {
+                throw new Exception('Failed to create group');
+            }
+
             // Auto-join the creator to the group
             $dbQueries->joinGroupQuery($userId, $groupId);
             
